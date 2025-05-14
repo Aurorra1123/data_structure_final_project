@@ -58,6 +58,11 @@ python source.py
      RANGE_PATTERN <ID1> <ID2> "Pattern"
      ```
 
+3.**Input File**
+```bash
+python source.py < test_file.txt
+```
+
 ## Configuration
 
 ### 1. String Matching Algorithm Selection
