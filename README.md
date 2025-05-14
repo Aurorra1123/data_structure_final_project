@@ -93,7 +93,7 @@ if __name__ == "__main__":
 Below is the time execution using different string matching methods. 
 - The first method is using the **BM** method
 - The second method is using the **KMP** method
-- The thrid result is using built-in function **in**
+- The thrid result is using built-in function **"in"**
 
 ![ExecutionTime](images/time_comparison.jpg)
 
