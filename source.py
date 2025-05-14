@@ -1,7 +1,9 @@
-# output.txt 文件用于写入所有输出
-OUTPUT_FILE = "output.txt"
+import time
 
-# 清空或创建 output.txt 文件
+#常量定义
+OUTPUT_FILE = "output.txt"
+STRING_MATCH_ALGORITHM = "IN"  # 可选: "KMP", "BM" 或 "IN"
+
 with open(OUTPUT_FILE, "w") as f:
     pass
 
@@ -63,22 +65,14 @@ class AVLTree:
         return x
 
     def insert(self, product_id, price, description):
-        # 实现AVL树的插入操作
-        # 1. 标准BST插入
-        # 2. 更新祖先节点的高度
-        # 3. 获取平衡因子
-        # 4. 如果节点失衡，则执行旋转 (LL, RR, LR, RL)
-        # 返回新的根节点
-        # 注意：此函数需要递归实现或迭代实现，并正确处理平衡调整
         self.root = self._insert_node(self.root, product_id, price, description)
 
     def _insert_node(self, root, product_id, price, description):
-        # 递归辅助函数
         if not root:
             return AVLNode(product_id, price, description)
         elif product_id < root.product_id:
             root.left = self._insert_node(root.left, product_id, price, description)
-        else: # 根据项目实际情况，如果允许相同ID则需要额外处理，文档未明确，通常ID唯一
+        else:
             root.right = self._insert_node(root.right, product_id, price, description)
 
         root.height = 1 + max(self._get_height(root.left), self._get_height(root.right))
@@ -103,13 +97,6 @@ class AVLTree:
 
 
     def delete(self, product_id):
-        # 实现AVL树的删除操作
-        # 1. 标准BST删除
-        # 2. 更新祖先节点的高度
-        # 3. 获取平衡因子
-        # 4. 如果节点失衡，则执行旋转
-        # 返回新的根节点
-        # 注意：此函数需要递归实现或迭代实现，并正确处理平衡调整
         self.root = self._delete_node(self.root, product_id)
 
     def _delete_node(self, root, product_id):
@@ -208,18 +195,147 @@ class AVLTree:
             self._range_search_nodes(node.right, id1, id2, result_nodes)
 
 
-# 字符串匹配算法 (根据课程内容选择)
-# 例如 KMP, Boyer-Moore, Rabin-Karp 等
-# 这里以一个简单的 `in` 操作符作为占位符，您需要替换为课程教授的最快算法
-def string_contains(text, pattern):
+# 字符串匹配算法选择
+def compute_lps(pattern):
     """
-    检查 text 中是否包含 pattern。
-    请替换为课程中教授的最快字符串匹配算法。
+    KMP算法：计算模式串的最长公共前后缀数组
+    """
+    lps = [0] * len(pattern)
+    length = 0
+    i = 1
+    
+    while i < len(pattern):
+        if pattern[i] == pattern[length]:
+            length += 1
+            lps[i] = length
+            i += 1
+        else:
+            if length != 0:
+                length = lps[length - 1]
+            else:
+                lps[i] = 0
+                i += 1
+    return lps
+
+def kmp_search(text, pattern):
+    """
+    KMP算法实现
+    """
+    if not pattern:
+        return True
+    if not text:
+        return False
+        
+    lps = compute_lps(pattern)
+    i = 0  # text的索引
+    j = 0  # pattern的索引
+    
+    while i < len(text):
+        if pattern[j] == text[i]:
+            i += 1
+            j += 1
+            
+        if j == len(pattern):
+            return True
+            
+        elif i < len(text) and pattern[j] != text[i]:
+            if j != 0:
+                j = lps[j - 1]
+            else:
+                i += 1
+                
+    return False
+
+def bad_char_heuristic(pattern):
+    """
+    BM算法：坏字符规则预处理
+    """
+    bad_char = {}
+    for i in range(len(pattern)):
+        bad_char[pattern[i]] = i
+    return bad_char
+
+def good_suffix_heuristic(pattern):
+    """
+    BM算法：好后缀规则预处理
+    """
+    m = len(pattern)
+    good_suffix = [0] * (m + 1)
+    suffix = [0] * (m + 1)
+    
+    # 计算后缀数组
+    for i in range(m):
+        suffix[i] = m
+    j = 0
+    for i in range(m-1, -1, -1):
+        if i > j and pattern[i] == pattern[m-1-j]:
+            j += 1
+        suffix[j] = m-1-i
+    
+    # 计算好后缀数组
+    for i in range(m):
+        good_suffix[i] = m
+    j = 0
+    for i in range(m-1, -1, -1):
+        if suffix[i] == i + 1:
+            for j in range(m-1-i):
+                if good_suffix[j] == m:
+                    good_suffix[j] = m-1-i
+    
+    for i in range(m-1):
+        good_suffix[m-1-suffix[i]] = m-1-i
+        
+    return good_suffix
+
+def boyer_moore_search(text, pattern):
+    """
+    Boyer-Moore算法实现
+    """
+    if not pattern:
+        return True
+    if not text:
+        return False
+        
+    m = len(pattern)
+    n = len(text)
+    
+    # 预处理
+    bad_char = bad_char_heuristic(pattern)
+    good_suffix = good_suffix_heuristic(pattern)
+    
+    # 搜索
+    s = 0  # 模式串相对于文本串的偏移量
+    while s <= n - m:
+        j = m - 1
+        
+        # 从右向左匹配
+        while j >= 0 and pattern[j] == text[s + j]:
+            j -= 1
+            
+        if j < 0:  # 找到匹配
+            return True
+        else:
+            # 使用坏字符规则和好后缀规则中的较大值
+            bc_shift = j - bad_char.get(text[s + j], -1)
+            gs_shift = good_suffix[j]
+            s += max(bc_shift, gs_shift)
+            
+    return False
+
+def builtin_search(text, pattern):
+    """
+    Python内置的in操作符实现
     """
     return pattern in text
 
+def string_contains(text, pattern):
+    algorithms = {
+        "KMP": kmp_search,
+        "BM": boyer_moore_search,
+        "IN": builtin_search
+    }
+    return algorithms.get(STRING_MATCH_ALGORITHM, builtin_search)(text, pattern)
 
-# 产品记录管理系统
 class ProductSystem:
     def __init__(self):
         self.avl_tree = AVLTree()
@@ -227,13 +343,12 @@ class ProductSystem:
     def process_lookup(self, product_id):
         price = self.avl_tree.lookup(product_id)
         if price is not None:
-            write_output(f"{price:.2f}") # [cite: 22]
+            write_output(f"{price:.2f}")
         else:
-            write_output("Product ID not found.") # [cite: 4, 23]
+            write_output("Product ID not found.")
 
     def process_insert(self, product_id, price, description):
-        # 插入操作通常没有显式输出到文件的要求，除非操作失败（但AVL树插入通常会成功除非ID重复且不允许）
-        # 文档中 INSERT 操作没有指定输出格式，但 LOOKUP, RANGE_PRICE, RANGE_PATTERN 有。
+
         self.avl_tree.insert(product_id, price, description)
         # 根据文档，INSERT 操作后通常没有立即的输出要求到 output.txt
 
@@ -244,12 +359,6 @@ class ProductSystem:
         # 根据文档，DELETE 操作后通常没有立即的输出要求到 output.txt
 
     def process_range_price(self, id1, id2, tau):
-        # 1. 在AVL树中找到ID在 [id1, id2] 范围内的所有产品。
-        #    这可以通过修改中序遍历或专门的范围搜索函数实现。
-        #    AVL树的有序性有助于高效地找到这个范围。
-        # 2. 对于找到的每个产品，检查其价格是否 <= tau。
-        # 3. 收集所有符合条件的产品ID，并按升序排序（AVL树遍历本身可以保证ID有序）。
-        # 4. 按照格式输出。
         result_nodes = []
         self.avl_tree._range_search_nodes(self.avl_tree.root, id1, id2, result_nodes)
 
@@ -258,41 +367,36 @@ class ProductSystem:
             if node.price <= tau:
                 matching_ids.append(node.product_id)
 
-        # result_nodes 本身可能不是严格按ID排序的，如果_range_search_nodes不能保证严格升序，需要排序
-        # 但如果_range_search_nodes是基于中序遍历思想，则本身就是升序的
         matching_ids.sort() # 确保升序
 
         if matching_ids:
-            write_output(" ".join(map(str, matching_ids))) # [cite: 23]
+            write_output(" ".join(map(str, matching_ids)))
         else:
-            write_output("No products found in the given range with the specified price.") # [cite: 8, 24]
+            write_output("No products found in the given range with the specified price.")
 
     def process_range_pattern(self, id1, id2, pattern):
-        # 1. 在AVL树中找到ID在 [id1, id2] 范围内的所有产品。
-        # 2. 对于找到的每个产品，使用课程中教授的最快字符串匹配算法检查其描述是否包含 pattern。
-        # 3. 收集所有符合条件的产品ID，并按升序排序。
-        # 4. 按照格式输出。
         result_nodes = []
         self.avl_tree._range_search_nodes(self.avl_tree.root, id1, id2, result_nodes)
 
         matching_ids = []
         for node in result_nodes:
-            if string_contains(node.description, pattern): # [cite: 12]
+            if string_contains(node.description, pattern):
                 matching_ids.append(node.product_id)
 
         matching_ids.sort() # 确保升序
 
         if matching_ids:
-            write_output(" ".join(map(str, matching_ids))) # [cite: 25]
+            write_output(" ".join(map(str, matching_ids)))
         else:
-            write_output("No products found in the given range with the specified pattern.") # [cite: 11, 26]
+            write_output("No products found in the given range with the specified pattern.")
 
 
 # 主程序逻辑
-# ... (AVLNode, AVLTree, ProductSystem 类的定义保持不变) ...
-# ... (OUTPUT_FILE 和 write_output 函数也保持不变) ...
 
 if __name__ == "__main__":
+    # 记录开始时间
+    start_time = time.time()
+    
     system = ProductSystem()
 
     # 1. 读取 N 和 Q (在同一行)
@@ -321,10 +425,7 @@ if __name__ == "__main__":
             product_id = int(parts[1])
             system.process_lookup(product_id)
         elif op_type == "INSERT":
-            # INSERT <ProductID> <Price> <Description>
-            # 需要更精确地分割以处理带空格的描述
-            # op_type product_id price "description with spaces"
-            # split(maxsplit=3) 会分成4部分: op, id, price, "desc"
+
             parsed_insert = operation_line_raw.split(maxsplit=3)
             product_id = int(parsed_insert[1])
             price = float(parsed_insert[2])
@@ -348,3 +449,10 @@ if __name__ == "__main__":
             id2 = int(parsed_range_pattern[2])
             pattern = parsed_range_pattern[3].strip('"') # 移除模式两边的引号
             system.process_range_pattern(id1, id2, pattern)
+    
+    # 记录结束时间并计算总执行时间
+    end_time = time.time()
+    execution_time = end_time - start_time
+    
+    # 将执行时间输出到终端
+    print(f"程序总执行时间: {execution_time:.4f} 秒")
