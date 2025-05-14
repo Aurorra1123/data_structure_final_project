@@ -1,88 +1,144 @@
-# 产品管理系统
+# Product Management System
 
-这是一个基于AVL树实现的产品管理系统，支持高效的产品信息存储、查询和范围搜索操作。
+## Overview
+This system implements a product management system using AVL tree as the core data structure. It supports various operations including lookup, insert, delete, range queries with price filtering, and range queries with pattern matching.
 
-## 功能特点
+## Requirements
+- Python 3.6 or higher
+- No external dependencies required
 
-- 使用AVL树作为底层数据结构，确保所有操作的时间复杂度为O(log n)
-- 支持以下操作：
-  - 插入产品信息（INSERT）
-  - 查询产品价格（LOOKUP）
-  - 删除产品信息（DELETE）
-  - 价格范围搜索（RANGE_PRICE）
-  - 描述模式搜索（RANGE_PATTERN）
+## Project Structure
 
-## 系统要求
-
-- Python 3.x
-- 无需额外依赖包
-
-## 使用方法
-
-1. 准备输入文件（例如：test_file.txt），格式如下：
-   ```
-   N Q
-   ID1 Price1 "Description1"
-   ID2 Price2 "Description2"
-   ...
-   Operation1
-   Operation2
-   ...
-   ```
-   其中：
-   - N：初始产品记录数量
-   - Q：操作数量
-   - 每个操作可以是以下格式之一：
-     - `LOOKUP <ProductID>`
-     - `INSERT <ProductID> <Price> "Description"`
-     - `DELETE <ProductID>`
-     - `RANGE_PRICE <ID1> <ID2> <Tau>`
-     - `RANGE_PATTERN <ID1> <ID2> "Pattern"`
-
-2. 运行程序：
-   ```bash
-   python source.py < test_file.txt
-   ```
-
-3. 查看输出：
-   - 所有输出将写入 `output.txt` 文件
-   - 每个操作的结果会按顺序记录在输出文件中
-
-## 输出格式
-
-- LOOKUP：输出产品价格（保留两位小数）或 "Product ID not found."
-- RANGE_PRICE：输出符合价格条件的产品ID列表（空格分隔）或提示未找到
-- RANGE_PATTERN：输出符合描述模式的产品ID列表（空格分隔）或提示未找到
-- INSERT 和 DELETE 操作不产生输出
-
-## 示例
-
-输入示例：
+![System Structure](images/structure.svg)
 ```
-2 3
-1 99.99 "High quality laptop"
-2 149.99 "Gaming mouse"
-LOOKUP 1
-RANGE_PRICE 1 2 100.00
-RANGE_PATTERN 1 2 "laptop"
+.
+├── source.py          
+├── output.txt        
+├── images/           
+│   └── structure.svg 
+└── README.md         
 ```
 
-输出示例（output.txt）：
+## Code Structure
+1. **Core Data Structures**
+   - `AVLNode`: Node class for AVL tree
+   - `AVLTree`: AVL tree implementation
+   - `ProductSystem`: Main system class
+
+2. **String Matching Algorithms**
+   - KMP Algorithm
+   - Boyer-Moore Algorithm
+   - Python built-in 'in' operator
+
+3. **Main Operations**
+   - Single-ID Lookup
+   - Insert
+   - Delete
+   - Range Query + Price Filtering
+   - Range Query + Pattern Matching
+
+## How to Run
+1. **Basic Execution**
+```bash
+python source.py
 ```
-99.99
-1
-1
+
+2. **Input Format**
+   - First line: `N Q` (N: number of initial products, Q: number of operations)
+   - Next N lines: Initial product records
+     ```
+     <ProductID> <Price> "Description"
+     ```
+   - Next Q lines: Operations
+     ```
+     LOOKUP <ProductID>
+     INSERT <ProductID> <Price> "Description"
+     DELETE <ProductID>
+     RANGE_PRICE <ID1> <ID2> <Tau>
+     RANGE_PATTERN <ID1> <ID2> "Pattern"
+     ```
+
+## Configuration
+
+### 1. String Matching Algorithm Selection
+To change the string matching algorithm, modify the `STRING_MATCH_ALGORITHM` constant at the beginning of `source.py`:
+```python
+STRING_MATCH_ALGORITHM = "IN"  # Options: "KMP", "BM", or "IN"
+```
+- `"KMP"`: Knuth-Morris-Pratt algorithm
+- `"BM"`: Boyer-Moore algorithm
+- `"IN"`: Python built-in 'in' operator (default)
+
+### 2. Output File Path
+To change the output file path, modify the `OUTPUT_FILE` constant at the beginning of `source.py`:
+```python
+OUTPUT_FILE = "output.txt"  # Change to your desired path
 ```
 
-## 实现细节
+### 3. Execution Time Measurement
+The system automatically measures and outputs the total execution time. The timing is implemented in the main block:
+```python
+if __name__ == "__main__":
+    start_time = time.time()
+    # ... system execution ...
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Total execution time: {execution_time:.4f} seconds")
+```
+Below is the time execution using different string matching methods. 
+- The first method is using the **BM** method
+- The second method is using the **KMP** method
+- The thrid result is using built-in function **in**
 
-- 使用AVL树确保树的平衡性，优化查询性能
-- 范围搜索使用优化的遍历算法
-- 字符串匹配使用内置的字符串查找功能（可根据需要替换为更高效的算法）
+![ExecutionTime](images/time_comparison.jpg)
 
-## 注意事项
 
-- 产品ID应为整数
-- 价格应为浮点数
-- 描述和模式搜索字符串需要用双引号包围
-- 所有ID在范围内搜索时都是闭区间 [ID1, ID2] 
+## Output Format
+1. **LOOKUP**: Outputs the price of the product or "Product ID not found"
+2. **RANGE_PRICE**: Outputs space-separated product IDs or "No products found"
+3. **RANGE_PATTERN**: Outputs space-separated product IDs or "No products found"
+4. **INSERT/DELETE**: No output to file
+5. **Execution Time**: Printed to terminal
+
+## Example Usage
+```
+Input:
+4 6
+10001 19.99 "Apple Watch"
+10002 49.50 "Samsung Galaxy Watch"
+10003 999.99 "MacBook Pro"
+10004 39.99 "Galaxy Buds Pro"
+LOOKUP 10001
+INSERT 10005 29.99 "Apple Watch SE"
+RANGE_PRICE 10000 10005 50.00
+RANGE_PATTERN 10000 10005 "Pro"
+DELETE 10003
+LOOKUP 10003
+```
+```
+Output (output.txt):
+19.99
+10001 10002 10004 10005
+10003 10004
+Product ID not found.
+```
+```
+Terminal:
+Total execution time: xxx seconds
+```
+
+## Performance Considerations
+
+| Operation | Time Complexity | Space Complexity | Description |
+|-----------|----------------|------------------|-------------|
+| AVL Tree Operations | O(log n) | O(1) | Basic tree operations (insert, delete, lookup) |
+| Range Queries | O(log n + k log k) | O(k) | k is the number of results |
+| String Matching | | | |
+| - KMP | O(n + m) | O(m) | n: text length, m: pattern length |
+| - Boyer-Moore | Average O(n/m) | O(m) | Best case performance |
+
+## Notes
+- All product IDs are integers
+- Prices are floating-point numbers
+- Descriptions and patterns are case-sensitive
+- Results are always sorted by product ID 

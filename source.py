@@ -2,7 +2,7 @@ import time
 
 #常量定义
 OUTPUT_FILE = "output.txt"
-STRING_MATCH_ALGORITHM = "IN"  # 可选: "KMP", "BM" 或 "IN"
+STRING_MATCH_ALGORITHM = "BM"  # 可选: "KMP", "BM" 或 "IN"
 
 with open(OUTPUT_FILE, "w") as f:
     pass
